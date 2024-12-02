@@ -385,7 +385,8 @@ class Game2048 {
         this.addRandomTile();
         this.addRandomTile();
         this.render();
-        this.username = generateUsername();
+        // Don't reset the username on restart !
+        // this.username = generateUsername();
     }
 
 }
