@@ -5,273 +5,337 @@ function generateUsername() {
 }
 
 class Game2048 {
-    constructor(size = 4) {
-        this.size = size;
-        this.grid = [];
+    constructor(container) {
+        this.container = container;
+        this.grid = Array(4).fill().map(() => Array(4).fill(0));
         this.score = 0;
+        this.bombProbability = 0.05; // 5% chance for bomb
         this.gameOver = false;
+        this.setupGame();
+        this.addExplosionStyles();
         this.username = generateUsername();
-        this.initialize();
     }
 
-    initialize() {
-        // Create empty grid
-        for (let i = 0; i < this.size; i++) {
-            this.grid[i] = [];
-            for (let j = 0; j < this.size; j++) {
-                this.grid[i][j] = 0;
+    setupGame() {
+        // Create grid cells
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.dataset.row = i;
+                cell.dataset.col = j;
+                this.container.appendChild(cell);
             }
         }
+
         // Add initial tiles
         this.addRandomTile();
         this.addRandomTile();
+        this.render();
+
+        // Add keyboard event listener
+        document.addEventListener('keydown', this.handleKeyPress.bind(this));
+    }
+
+    addExplosionStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes explode {
+                0% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+                50% {
+                    transform: scale(1.2);
+                    opacity: 0.5;
+                }
+                100% {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+            }
+
+            .explode {
+                animation: explode 0.5s ease-out;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    getRandomTile() {
+        const random = Math.random();
+        if (random < this.bombProbability) {
+            return 'bomb';
+        }
+        return Math.random() < 0.9 ? 2 : 4;
     }
 
     addRandomTile() {
-        const availableCells = [];
-        
-        // Find all empty cells
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
+        const emptyCells = [];
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
                 if (this.grid[i][j] === 0) {
-                    availableCells.push({ x: i, y: j });
+                    emptyCells.push({ row: i, col: j });
                 }
             }
         }
 
-        if (availableCells.length > 0) {
-            const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
-            this.grid[randomCell.x][randomCell.y] = Math.random() < 0.9 ? 2 : 4;
+        if (emptyCells.length > 0) {
+            const { row, col } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            this.grid[row][col] = this.getRandomTile();
+        }
+    }
+
+    render() {
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                const cell = document.querySelector(`.grid-cell[data-row="${i}"][data-col="${j}"]`);
+                const value = this.grid[i][j];
+                
+                // First clear both className and content
+                cell.className = 'grid-cell';
+                cell.textContent = '';
+                
+                if (value !== 0) {
+                    if (value === 'bomb') {
+                        // Only add the class, no text content
+                        cell.classList.add('tile-bomb');
+                    } else {
+                        // For numbers, add both text and class
+                        cell.textContent = value;
+                        cell.classList.add(`tile-${value}`);
+                    }
+                }
+            }
+        }
+
+        // Update score
+        document.getElementById('score').textContent = this.score;
+    }
+
+    
+
+    handleKeyPress(event) {
+        if (this.gameOver) return;
+
+        let moved = false;
+        switch (event.key) {
+            case 'ArrowUp':
+                moved = this.move('up');
+                break;
+            case 'ArrowDown':
+                moved = this.move('down');
+                break;
+            case 'ArrowLeft':
+                moved = this.move('left');
+                break;
+            case 'ArrowRight':
+                moved = this.move('right');
+                break;
+            default:
+                return;
+        }
+
+        if (moved) {
+            this.addRandomTile();
+            this.render();
+            if (this.isGameOver()) {
+                this.gameOver = true;
+                this.showGameOver();
+            }
         }
     }
 
     move(direction) {
         let moved = false;
+        const newGrid = Array(4).fill().map(() => Array(4).fill(0));
 
         switch (direction) {
-            case 'left':
-                moved = this.moveLeft();
-                break;
-            case 'right':
-                moved = this.moveRight();
-                break;
             case 'up':
-                moved = this.moveUp();
+                for (let j = 0; j < 4; j++) {
+                    let pos = 0;
+                    for (let i = 0; i < 4; i++) {
+                        if (this.grid[i][j] !== 0) {
+                            if (pos > 0 && newGrid[pos - 1][j] === this.grid[i][j]) {
+                                moved = this.mergeTiles(i, j, pos - 1, j, newGrid) || moved;
+                            } else {
+                                newGrid[pos][j] = this.grid[i][j];
+                                moved = pos !== i || moved;
+                                pos++;
+                            }
+                        }
+                    }
+                }
                 break;
+
             case 'down':
-                moved = this.moveDown();
+                for (let j = 0; j < 4; j++) {
+                    let pos = 3;
+                    for (let i = 3; i >= 0; i--) {
+                        if (this.grid[i][j] !== 0) {
+                            if (pos < 3 && newGrid[pos + 1][j] === this.grid[i][j]) {
+                                moved = this.mergeTiles(i, j, pos + 1, j, newGrid) || moved;
+                            } else {
+                                newGrid[pos][j] = this.grid[i][j];
+                                moved = pos !== i || moved;
+                                pos--;
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case 'left':
+                for (let i = 0; i < 4; i++) {
+                    let pos = 0;
+                    for (let j = 0; j < 4; j++) {
+                        if (this.grid[i][j] !== 0) {
+                            if (pos > 0 && newGrid[i][pos - 1] === this.grid[i][j]) {
+                                moved = this.mergeTiles(i, j, i, pos - 1, newGrid) || moved;
+                            } else {
+                                newGrid[i][pos] = this.grid[i][j];
+                                moved = pos !== j || moved;
+                                pos++;
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case 'right':
+                for (let i = 0; i < 4; i++) {
+                    let pos = 3;
+                    for (let j = 3; j >= 0; j--) {
+                        if (this.grid[i][j] !== 0) {
+                            if (pos < 3 && newGrid[i][pos + 1] === this.grid[i][j]) {
+                                moved = this.mergeTiles(i, j, i, pos + 1, newGrid) || moved;
+                            } else {
+                                newGrid[i][pos] = this.grid[i][j];
+                                moved = pos !== j || moved;
+                                pos--;
+                            }
+                        }
+                    }
+                }
                 break;
         }
 
         if (moved) {
-            this.addRandomTile();
-            this.checkGameOver();
+            this.grid = newGrid;
         }
 
         return moved;
     }
 
-    moveLeft() {
-        let moved = false;
+    mergeTiles(row, col, newRow, newCol, newGrid) {
+        const currentValue = this.grid[row][col];
+        const targetValue = newGrid[newRow][newCol];
         
-        for (let i = 0; i < this.size; i++) {
-            let row = this.grid[i].filter(cell => cell !== 0);
-            
-            // Merge tiles
-            for (let j = 0; j < row.length - 1; j++) {
-                if (row[j] === row[j + 1]) {
-                    row[j] *= 2;
-                    this.score += row[j];
-                    row.splice(j + 1, 1);
-                    moved = true;
-                }
-            }
-
-            // Fill with zeros
-            while (row.length < this.size) {
-                row.push(0);
-            }
-
-            if (JSON.stringify(this.grid[i]) !== JSON.stringify(row)) {
-                moved = true;
-            }
-            this.grid[i] = row;
+        if (currentValue === 'bomb' || targetValue === 'bomb') {
+            this.explodeBomb(newRow, newCol);
+            return true;
         }
-
-        return moved;
-    }
-
-    moveRight() {
-        let moved = false;
         
-        for (let i = 0; i < this.size; i++) {
-            let row = this.grid[i].filter(cell => cell !== 0);
-            
-            // Merge tiles
-            for (let j = row.length - 1; j > 0; j--) {
-                if (row[j] === row[j - 1]) {
-                    row[j] *= 2;
-                    this.score += row[j];
-                    row.splice(j - 1, 1);
-                    moved = true;
-                }
-            }
-
-            // Fill with zeros
-            while (row.length < this.size) {
-                row.unshift(0);
-            }
-
-            if (JSON.stringify(this.grid[i]) !== JSON.stringify(row)) {
-                moved = true;
-            }
-            this.grid[i] = row;
+        if (currentValue === targetValue) {
+            newGrid[newRow][newCol] = currentValue * 2;
+            this.score += newGrid[newRow][newCol];
+            return true;
         }
-
-        return moved;
+        return false;
     }
 
-    moveUp() {
-        let moved = false;
+    explodeBomb(row, col) {
+        // Clear 3x3 grid around the bomb
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                const newRow = row + i;
+                const newCol = col + j;
+                
+                // Check if within grid bounds
+                if (newRow >= 0 && newRow < 4 && newCol >= 0 && newCol < 4) {
+                    // Add explosion animation class
+                    const cell = document.querySelector(`.grid-cell[data-row="${newRow}"][data-col="${newCol}"]`);
+                    if (cell) {
+                        cell.classList.add('explode');
+                        
+                        // Remove explosion class after animation
+                        setTimeout(() => {
+                            cell.classList.remove('explode');
+                        }, 500);
+                    }
+                    
+                    // Clear the cell
+                    this.grid[newRow][newCol] = 0;
+                }
+            }
+        }
         
-        for (let j = 0; j < this.size; j++) {
-            let column = [];
-            for (let i = 0; i < this.size; i++) {
-                column.push(this.grid[i][j]);
-            }
-            
-            column = column.filter(cell => cell !== 0);
-            
-            // Merge tiles
-            for (let i = 0; i < column.length - 1; i++) {
-                if (column[i] === column[i + 1]) {
-                    column[i] *= 2;
-                    this.score += column[i];
-                    column.splice(i + 1, 1);
-                    moved = true;
-                }
-            }
+        // Add some points for using the bomb
+        this.score += 100;
+    }
 
-            // Fill with zeros
-            while (column.length < this.size) {
-                column.push(0);
-            }
-
-            for (let i = 0; i < this.size; i++) {
-                if (this.grid[i][j] !== column[i]) {
-                    moved = true;
-                }
-                this.grid[i][j] = column[i];
+    isGameOver() {
+        // Check for empty cells
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                if (this.grid[i][j] === 0) return false;
             }
         }
 
-        return moved;
-    }
-
-    moveDown() {
-        let moved = false;
-        
-        for (let j = 0; j < this.size; j++) {
-            let column = [];
-            for (let i = 0; i < this.size; i++) {
-                column.push(this.grid[i][j]);
-            }
-            
-            column = column.filter(cell => cell !== 0);
-            
-            // Merge tiles
-            for (let i = column.length - 1; i > 0; i--) {
-                if (column[i] === column[i - 1]) {
-                    column[i] *= 2;
-                    this.score += column[i];
-                    column.splice(i - 1, 1);
-                    moved = true;
-                }
-            }
-
-            // Fill with zeros
-            while (column.length < this.size) {
-                column.unshift(0);
-            }
-
-            for (let i = 0; i < this.size; i++) {
-                if (this.grid[i][j] !== column[i]) {
-                    moved = true;
-                }
-                this.grid[i][j] = column[i];
+        // Check for possible merges
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                const current = this.grid[i][j];
+                // Check right neighbor
+                if (j < 3 && (current === this.grid[i][j + 1] || current === 'bomb' || this.grid[i][j + 1] === 'bomb')) return false;
+                // Check bottom neighbor
+                if (i < 3 && (current === this.grid[i + 1][j] || current === 'bomb' || this.grid[i + 1][j] === 'bomb')) return false;
             }
         }
 
-        return moved;
+        return true;
     }
 
-    checkGameOver() {
-        // Check if there are any empty cells
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (this.grid[i][j] === 0) {
-                    return;
-                }
-            }
-        }
+    showGameOver() {
+        const gameOver = document.createElement('div');
+        gameOver.className = 'game-over';
+        gameOver.innerHTML = `
+            <div class="game-over-message">Game Over!</div>
+            <div>Final Score: ${this.score}</div>
+            <button class="restart-btn">Play Again</button>
+        `;
+        document.body.appendChild(gameOver);
+        gameOver.style.display = 'block';
 
-        // Check if any adjacent cells have the same value
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (
-                    (i < this.size - 1 && this.grid[i][j] === this.grid[i + 1][j]) ||
-                    (j < this.size - 1 && this.grid[i][j] === this.grid[i][j + 1])
-                ) {
-                    return;
-                }
-            }
-        }
-
-        this.gameOver = true;
-    }
-
-    handleKeyPress(event) {
-        if (this.gameOver) return;
-
-        switch (event.key) {
-            case 'ArrowLeft':
-                this.move('left');
-                break;
-            case 'ArrowRight':
-                this.move('right');
-                break;
-            case 'ArrowUp':
-                this.move('up');
-                break;
-            case 'ArrowDown':
-                this.move('down');
-                break;
-        }
-    }
-
-    getGrid() {
-        return this.grid;
-    }
-
-    getScore() {
-        return this.score;
+        const restartBtn = gameOver.querySelector('.restart-btn');
+        restartBtn.addEventListener('click', () => {
+            this.restart();
+            gameOver.remove();
+        });
     }
 
     getUsername() {
         return this.username;
     }
 
-    isGameOver() {
-        return this.gameOver;
+    getScore() {
+        return this.score;
+    }
+
+    getGrid() {
+        return this.grid;
     }
 
     restart() {
-        this.grid = [];
+        this.grid = Array(4).fill().map(() => Array(4).fill(0));
         this.score = 0;
         this.gameOver = false;
+        this.addRandomTile();
+        this.addRandomTile();
+        this.render();
         this.username = generateUsername();
-        this.initialize();
     }
+
 }
 
 function startNewGame() {
@@ -286,7 +350,7 @@ function updateUsername() {
 
 function updateUI() {
     const grid = game.getGrid();
-    const score = game.getScore();
+    const cells = document.querySelectorAll('.grid-cell');
     const username = game.getUsername();
     
     // Update username display
@@ -296,31 +360,29 @@ function updateUI() {
     }
     
     // Update score display
-    const scoreElement = document.getElementById('score');
-    if (scoreElement) {
-        scoreElement.textContent = score;
-    }
+    // Update score
+    document.getElementById('score').textContent = game.score;
 
-    // Update grid display
-    const gridContainer = document.querySelector('.grid-container');
-    if (gridContainer) {
-        gridContainer.innerHTML = ''; // Clear existing grid
-
-        // Create and update grid cells
-        for (let i = 0; i < grid.length; i++) {
-            for (let j = 0; j < grid[i].length; j++) {
-                const cell = document.createElement('div');
-                cell.className = 'grid-cell';
-                
-                if (grid[i][j] !== 0) {
-                    cell.textContent = grid[i][j];
-                    cell.classList.add(`tile-${grid[i][j]}`);
-                }
-                
-                gridContainer.appendChild(cell);
+    cells.forEach((cell) => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        const value = grid[row][col];
+        
+        // First clear both className and content
+        cell.className = 'grid-cell';
+        cell.textContent = '';
+        
+        if (value !== 0) {
+            if (value === 'bomb') {
+                // Only add the class, no text content
+                cell.classList.add('tile-bomb');
+            } else {
+                // For numbers, add both text and class
+                cell.textContent = value;
+                cell.classList.add(`tile-${value}`);
             }
         }
-    }
+    });
 
     // Update game over message
     const gameOverElement = document.getElementById('game-over');
@@ -329,8 +391,11 @@ function updateUI() {
     }
 }
 
-// Initialize the game and update UI
-const game = new Game2048();
+// Find or create the container element
+const container = document.querySelector('.grid-container');
+// Initialize the game with the container
+const game = new Game2048(container);
+
 updateUI();
 
 // Add event listeners
