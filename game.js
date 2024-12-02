@@ -278,22 +278,39 @@ class Game2048 {
         // Check for empty cells
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
-                if (this.grid[i][j] === 0) return false;
+                if (this.grid[i][j] === 0) {
+                    return false; // Game not over if there's an empty cell
+                }
             }
         }
-
-        // Check for possible merges
+    
+        // Check for possible merges horizontally and vertically
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
-                const current = this.grid[i][j];
+                const currentValue = this.grid[i][j];
+    
+                // Skip bomb tiles because they don't merge with numbers
+                if (currentValue === 'bomb') continue;
+    
                 // Check right neighbor
-                if (j < 3 && (current === this.grid[i][j + 1] || current === 'bomb' || this.grid[i][j + 1] === 'bomb')) return false;
+                if (j < 3) {
+                    const rightValue = this.grid[i][j + 1];
+                    if (currentValue === rightValue) {
+                        return false; // Game not over if merge is possible
+                    }
+                }
+    
                 // Check bottom neighbor
-                if (i < 3 && (current === this.grid[i + 1][j] || current === 'bomb' || this.grid[i + 1][j] === 'bomb')) return false;
+                if (i < 3) {
+                    const bottomValue = this.grid[i + 1][j];
+                    if (currentValue === bottomValue) {
+                        return false; // Game not over if merge is possible
+                    }
+                }
             }
         }
-
-        return true;
+    
+        return true; // Game is over if no moves are possible
     }
 
     showGameOver() {
