@@ -241,6 +241,11 @@ class Game2048 {
         if (fromValue === 'multiplier' || toValue === 'multiplier') {
             return true;
         }
+
+        // If either the from or to value is a bomb, return true
+        if (fromValue === 'bomb' || toValue === 'bomb') {
+            return true;
+        }
     
         // Allow merging only if the values are the same (ignoring multipliers)
         return fromValue === toValue;
