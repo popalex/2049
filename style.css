@@ -1,0 +1,340 @@
+/* Add at the top of your CSS file */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.game-container {
+    width: 500px;
+    margin: 10px auto;
+    text-align: center;
+    padding: 10px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.score-container {
+    background: #bbada0;
+    color: white;
+    padding: 15px;
+    border-radius: 3px;
+    font-size: 16px;
+    font-weight: 500;
+    margin-left: 15px;
+}
+
+.username {
+    color: #776e65;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 5px 0;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 15px;
+    background: #bbada0;
+    border-radius: 6px;
+    width: 450px; /* Added fixed width */
+    margin: 0 auto;
+}
+
+.grid-cell {
+    background: rgba(238, 228, 218, 0.35);
+    width: 95px; /* Adjusted width */
+    height: 95px; /* Adjusted height */
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.new-game-btn, .restart-btn {
+    font-family: 'Orbitron', sans-serif;
+    background: #8f7a66;
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.3s;
+    margin-right: 15px; /* align with container */
+    margin-top: 40px /* align with score */
+}
+
+.new-game-btn:hover, .restart-btn:hover {
+    background: #7f6a56;
+}
+
+.game-over {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(238, 228, 218, 0.90);
+    padding: 30px;
+    border-radius: 6px;
+    text-align: center;
+    display: none;
+    z-index: 1000;
+}
+
+.game-over-message {
+    font-size: 24px;
+    font-weight: 700;
+    color: #776e65;
+    margin-bottom: 20px;
+}
+
+/* Tile colors and sizes */
+.tile-2 { 
+    background: #eee4da; 
+    color: #776e65;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.tile-4 { 
+    background: #ede0c8; 
+    color: #776e65;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.tile-8 { 
+    background: #f2b179; 
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.tile-16 { 
+    background: #f59563; 
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.tile-32 { 
+    background: #f67c5f; 
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.tile-64 { 
+    background: #f65e3b; 
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.tile-128 { 
+    background: #edcf72; 
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.tile-256 { 
+    background: #edcc61; 
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.tile-512 { 
+    background: #edc850; 
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.tile-1024 { 
+    background: #edc53f; 
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.tile-2048 { 
+    background: #edc22e; 
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Add some spacing and adjust font sizes for better readability */
+#score {
+    margin-left: 10px;
+}
+
+button {
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Animation for new tiles */
+@keyframes appear {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.grid-cell:not(:empty) {
+    animation: appear 200ms ease-in-out;
+}
+
+/* Animation for merging tiles */
+@keyframes pop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.merged {
+    animation: pop 200ms ease-in-out;
+}
+
+/* Add some responsive design */
+@media (max-width: 520px) {
+    .game-container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .grid-container {
+        width: 300px; /* Adjusted for mobile */
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .grid-cell {
+        width: 65px; /* Adjusted for mobile */
+        height: 65px; /* Adjusted for mobile */
+        font-size: 18px;
+    }
+
+    .new-game-btn, .restart-btn {
+        padding: 10px 15px;
+        font-size: 12px;
+    }
+
+    .tile-2, .tile-4 { 
+        font-size: 18px;
+    }
+
+    .tile-8, .tile-16, .tile-32, .tile-64 { 
+        font-size: 16px;
+    }
+
+    .tile-128, .tile-256, .tile-512 { 
+        font-size: 14px;
+    }
+
+    .tile-1024, .tile-2048 { 
+        font-size: 12px;
+    }
+
+    .score-container {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .username {
+        font-size: 14px;
+    }
+
+    .game-over-message {
+        font-size: 18px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+    }
+
+    .username {
+        color: #a9a9a9;
+    }
+
+    .game-over {
+        background: rgba(26, 26, 26, 0.90);
+    }
+
+    .game-over-message {
+        color: #a9a9a9;
+    }
+}
+
+/* Smooth transitions */
+.grid-cell, button {
+    transition: all 0.15s ease-in-out;
+}
+
+/* Focus states for accessibility */
+button:focus {
+    outline: 3px solid #4a90e2;
+    outline-offset: 2px;
+}
+
+/* Disable animations if user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .grid-cell, button {
+        transition: none;
+    }
+
+    .grid-cell:not(:empty) {
+        animation: none;
+    }
+
+    .merged {
+        animation: none;
+    }
+}
