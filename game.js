@@ -67,9 +67,12 @@ class Game2048 {
         if (random < this.bombProbability) {
             return 'bomb';
         }
+        if (random < 0.2) { // 20% chance to spawn multiplier tile
+            return 'multiplier';
+        }
         return Math.random() < 0.9 ? 2 : 4;
     }
-
+    
     addRandomTile() {
         const emptyCells = [];
         for (let i = 0; i < 4; i++) {
@@ -79,12 +82,12 @@ class Game2048 {
                 }
             }
         }
-
+    
         if (emptyCells.length > 0) {
             const { row, col } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
             this.grid[row][col] = this.getRandomTile();
         }
-    }
+    }    
 
     render() {
         for (let i = 0; i < 4; i++) {
@@ -92,32 +95,30 @@ class Game2048 {
                 const cell = document.querySelector(`.grid-cell[data-row="${i}"][data-col="${j}"]`);
                 const value = this.grid[i][j];
                 
-                // First clear both className and content
+                // Clear the class and text content
                 cell.className = 'grid-cell';
-                cell.textContent = '';
-                
+                cell.textContent = ''; // Clear any previous content
+    
                 if (value !== 0) {
                     if (value === 'bomb') {
-                        // Only add the class, no text content
                         cell.classList.add('tile-bomb');
+                    } else if (value === 'multiplier') {
+                        cell.classList.add('tile-multiplier'); // Add multiplier tile class
                     } else {
-                        // For numbers, add both text and class
                         cell.textContent = value;
                         cell.classList.add(`tile-${value}`);
                     }
                 }
             }
         }
-
-        // Update score
-        document.getElementById('score').textContent = this.score;
-    }
-
     
+        // Update the score
+        document.getElementById('score').textContent = this.score;
+    }       
 
     handleKeyPress(event) {
         if (this.gameOver) return;
-
+    
         let moved = false;
         switch (event.key) {
             case 'ArrowUp':
@@ -135,28 +136,28 @@ class Game2048 {
             default:
                 return;
         }
-
+    
         if (moved) {
             this.addRandomTile();
             this.render();
             if (this.isGameOver()) {
                 this.gameOver = true;
-                this.showGameOver();
+                this.showGameOver();  // Only call this here once
             }
         }
-    }
+    }    
 
     move(direction) {
         let moved = false;
         const newGrid = Array(4).fill().map(() => Array(4).fill(0));
-
+    
         switch (direction) {
             case 'up':
                 for (let j = 0; j < 4; j++) {
                     let pos = 0;
                     for (let i = 0; i < 4; i++) {
                         if (this.grid[i][j] !== 0) {
-                            if (pos > 0 && newGrid[pos - 1][j] === this.grid[i][j]) {
+                            if (pos > 0 && this.canMerge(i, j, pos - 1, j, newGrid)) {
                                 moved = this.mergeTiles(i, j, pos - 1, j, newGrid) || moved;
                             } else {
                                 newGrid[pos][j] = this.grid[i][j];
@@ -167,13 +168,13 @@ class Game2048 {
                     }
                 }
                 break;
-
+    
             case 'down':
                 for (let j = 0; j < 4; j++) {
                     let pos = 3;
                     for (let i = 3; i >= 0; i--) {
                         if (this.grid[i][j] !== 0) {
-                            if (pos < 3 && newGrid[pos + 1][j] === this.grid[i][j]) {
+                            if (pos < 3 && this.canMerge(i, j, pos + 1, j, newGrid)) {
                                 moved = this.mergeTiles(i, j, pos + 1, j, newGrid) || moved;
                             } else {
                                 newGrid[pos][j] = this.grid[i][j];
@@ -184,13 +185,13 @@ class Game2048 {
                     }
                 }
                 break;
-
+    
             case 'left':
                 for (let i = 0; i < 4; i++) {
                     let pos = 0;
                     for (let j = 0; j < 4; j++) {
                         if (this.grid[i][j] !== 0) {
-                            if (pos > 0 && newGrid[i][pos - 1] === this.grid[i][j]) {
+                            if (pos > 0 && this.canMerge(i, j, i, pos - 1, newGrid)) {
                                 moved = this.mergeTiles(i, j, i, pos - 1, newGrid) || moved;
                             } else {
                                 newGrid[i][pos] = this.grid[i][j];
@@ -201,13 +202,13 @@ class Game2048 {
                     }
                 }
                 break;
-
+    
             case 'right':
                 for (let i = 0; i < 4; i++) {
                     let pos = 3;
                     for (let j = 3; j >= 0; j--) {
                         if (this.grid[i][j] !== 0) {
-                            if (pos < 3 && newGrid[i][pos + 1] === this.grid[i][j]) {
+                            if (pos < 3 && this.canMerge(i, j, i, pos + 1, newGrid)) {
                                 moved = this.mergeTiles(i, j, i, pos + 1, newGrid) || moved;
                             } else {
                                 newGrid[i][pos] = this.grid[i][j];
@@ -219,30 +220,61 @@ class Game2048 {
                 }
                 break;
         }
-
+    
         if (moved) {
             this.grid = newGrid;
         }
-
+    
         return moved;
     }
+
+    canMerge(fromRow, fromCol, toRow, toCol, newGrid) {
+        const fromValue = this.grid[fromRow][fromCol];
+        const toValue = newGrid[toRow][toCol];
+    
+        // Check if the target tile is empty or if it can merge with the current tile
+        if (toValue === 0) {
+            return true;
+        }
+    
+        // If either the from or to value is a multiplier, return true
+        if (fromValue === 'multiplier' || toValue === 'multiplier') {
+            return true;
+        }
+    
+        // Allow merging only if the values are the same (ignoring multipliers)
+        return fromValue === toValue;
+    }
+    
 
     mergeTiles(row, col, newRow, newCol, newGrid) {
         const currentValue = this.grid[row][col];
         const targetValue = newGrid[newRow][newCol];
-        
+    
+        // Handle bomb tiles
         if (currentValue === 'bomb' || targetValue === 'bomb') {
             this.explodeBomb(newRow, newCol);
             return true;
         }
-        
+    
+        // Handle multiplier tile merging with number tile
+        if (currentValue === 'multiplier' && typeof targetValue === 'number' && targetValue > 0) {
+            // Apply the multiplier: Multiply the target tile value by 2 (adjust as needed)
+            newGrid[newRow][newCol] *= 2;  // Assuming multiplier always multiplies by 2
+            this.score += newGrid[newRow][newCol];
+            return true;
+        }
+    
+        // Handle normal tile merging with another normal tile
         if (currentValue === targetValue) {
             newGrid[newRow][newCol] = currentValue * 2;
             this.score += newGrid[newRow][newCol];
             return true;
         }
+    
         return false;
-    }
+    }       
+        
 
     explodeBomb(row, col) {
         // Clear 3x3 grid around the bomb
@@ -250,29 +282,27 @@ class Game2048 {
             for (let j = -1; j <= 1; j++) {
                 const newRow = row + i;
                 const newCol = col + j;
-                
+    
                 // Check if within grid bounds
                 if (newRow >= 0 && newRow < 4 && newCol >= 0 && newCol < 4) {
-                    // Add explosion animation class
-                    const cell = document.querySelector(`.grid-cell[data-row="${newRow}"][data-col="${newCol}"]`);
-                    if (cell) {
-                        cell.classList.add('explode');
-                        
-                        // Remove explosion class after animation
-                        setTimeout(() => {
-                            cell.classList.remove('explode');
-                        }, 500);
+                    const cellValue = this.grid[newRow][newCol];
+    
+                    // If it's not a bomb and it's not a multiplier, clear the cell
+                    if (cellValue !== 'multiplier') {
+                        this.grid[newRow][newCol] = 0; // Clear the cell
                     }
-                    
-                    // Clear the cell
-                    this.grid[newRow][newCol] = 0;
+                    // If it's a multiplier, give bonus points but don't remove it
+                    if (cellValue === 'multiplier') {
+                        this.score += 50; // Bonus for multiplier tiles in the explosion zone
+                    }
                 }
             }
         }
-        
+    
         // Add some points for using the bomb
         this.score += 100;
     }
+    
 
     isGameOver() {
         // Check for empty cells
@@ -377,7 +407,6 @@ function updateUI() {
     }
     
     // Update score display
-    // Update score
     document.getElementById('score').textContent = game.score;
 
     cells.forEach((cell) => {
@@ -391,22 +420,24 @@ function updateUI() {
         
         if (value !== 0) {
             if (value === 'bomb') {
-                // Only add the class, no text content
                 cell.classList.add('tile-bomb');
+            } else if (value === 'multiplier') {
+                cell.classList.add('tile-multiplier');
+                cell.textContent = '×2';  // Display multiplier factor
             } else {
-                // For numbers, add both text and class
                 cell.textContent = value;
                 cell.classList.add(`tile-${value}`);
             }
         }
     });
 
-    // Update game over message
+    // Don't check for game over again in updateUI, it's handled in handleKeyPress
     const gameOverElement = document.getElementById('game-over');
     if (gameOverElement) {
-        gameOverElement.style.display = game.isGameOver() ? 'block' : 'none';
+        gameOverElement.style.display = game.gameOver ? 'block' : 'none';
     }
 }
+
 
 // Find or create the container element
 const container = document.querySelector('.grid-container');

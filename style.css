@@ -351,3 +351,24 @@ button:focus {
     content: "\1F4A3"; /* Unicode for bomb emoji */
     font-size: 24px;
 }
+
+.tile-multiplier {
+    background-color: #f7f1d7; /* Light color for multiplier */
+    color: #4f4f4f; /* Darker text color for contrast */
+    font-size: 2rem; /* Adjust font size */
+    text-align: center;
+    line-height: 60px; /* Adjust this based on your grid cell size */
+    position: relative;
+}
+
+.tile-multiplier::before {
+    font-size: 2rem; /* Adjust size to match tile */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+ 
+}
+
+.tile-multiplier:hover {
+    background-color: #ff9f00; /* Darken the color on hover */
+}
