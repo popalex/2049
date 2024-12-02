@@ -9,7 +9,7 @@ class Game2048 {
         this.container = container;
         this.grid = Array(4).fill().map(() => Array(4).fill(0));
         this.score = 0;
-        this.bombProbability = 0.05; // 5% chance for bomb
+        this.bombProbability = 0.10; // 10% chance for bomb
         this.gameOver = false;
         this.setupGame();
         this.addExplosionStyles();
