@@ -1,3 +1,5 @@
+const API_BASE_URL = 'http://127.0.0.1:5000';
+
 function generateUsername() {
     const uuid = crypto.randomUUID();
     const shortId = uuid.slice(0, 8);
@@ -452,6 +454,63 @@ function updateUI() {
     }
 }
 
+function getHighScores() {
+    fetch(`${API_BASE_URL}/high_scores`)
+        .then(response => response.json())
+        .then(data => {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+            
+            const title = document.createElement('h2');
+            title.textContent = 'High Scores';
+            
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Score</th>
+                </tr>
+                ${data.map(score => `
+                    <tr>
+                        <td>${score.index}</td>
+                        <td>${score.playerName}</td>
+                        <td>${score.highScore.toLocaleString()}</td>
+                    </tr>
+                `).join('')}
+            `;
+
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(title);
+            modalContent.appendChild(table);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // Show the modal
+            modal.style.display = 'block';
+
+            // Close when clicking outside the modal
+            window.onclick = function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching high scores:', error);
+        });
+}
+
 
 // Find or create the container element
 const container = document.querySelector('.grid-container');
@@ -469,3 +528,4 @@ document.addEventListener('keydown', (event) => {
 document.getElementById('new-game-btn').addEventListener('click', startNewGame);
 document.getElementById('restart-btn').addEventListener('click', startNewGame);
 document.getElementById('new-username-btn')?.addEventListener('click', updateUsername);
+document.getElementById('high-scores-btn')?.addEventListener('click', getHighScores);
