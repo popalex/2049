@@ -269,6 +269,14 @@ class Game2048 {
             this.score += newGrid[newRow][newCol];
             return true;
         }
+
+        // Handle multiplier tile merging with number tile
+        if (targetValue === 'multiplier' && typeof currentValue === 'number' && currentValue > 0) {
+            newGrid[newRow][newCol] = currentValue * 2;
+            this.score += newGrid[newRow][newCol];
+            console.log(`Multiplier tile merged with ${targetValue} at ${newRow}, ${newCol}, score updated: ${this.score}`);
+            return true;
+        }
     
         // Handle normal tile merging with another normal tile
         if (currentValue === targetValue) {
