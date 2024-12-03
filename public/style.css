@@ -90,7 +90,7 @@ html, body {
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: background-color 0.3s;
-    margin-right: 15px; /* align with container */
+    margin-right: 10px; /* align with container */
     margin-top: 40px /* align with score */
 }
 
