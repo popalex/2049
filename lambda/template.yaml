@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  HighScoresFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: high-scores-table
+      Events:
+        HighScores:
+          Type: Api
+          Properties:
+            Path: /high-scores
+            Method: get

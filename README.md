@@ -10,6 +10,10 @@
 - Dynamic Animations: Enjoy visually appealing effects like explosions for bomb tiles.
 - Usernames: Each game session generates a unique username for personalized gameplay.
 - Responsive Design: Optimized for desktop and mobile devices.
+- High Scores API: Track and compare scores with other players using our serverless API. 
+
+## Local Server setup
+[See API setup instructions](lambda/README.md)
 
 ## 🎮 How to Play
 
