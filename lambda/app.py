@@ -2,28 +2,18 @@ import json
 import os
 import boto3
 from boto3.dynamodb.conditions import Key
+from decimal import Decimal
 
-# 1. Install AWS SAM CLI and docker
-# 2. Run DynamoDB Local in a Docker container:
-# docker run -p 8000:8000 amazon/dynamodb-local
-
-# 3. Run the create_table script:
-# python create_table.py
-
-# 4. Start the local API:
-# sam local start-api
-
-
+# Add this custom JSON encoder class
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 def lambda_handler(event, context):
     # For local testing with DynamoDB Local
-    if 'AWS_SAM_LOCAL' in os.environ:
-        dynamodb = boto3.resource('dynamodb', 
-                                endpoint_url='http://localhost:8000',
-                                region_name='us-east-1',
-                                aws_access_key_id='dummy',
-                                aws_secret_access_key='dummy')
-    elif 'LOCAL_TESTING' in os.environ:
+    if 'LOCAL_TESTING' in os.environ:
         dynamodb = boto3.resource('dynamodb',
                                 endpoint_url='http://localhost:4566',
                                 region_name='us-east-1',
@@ -37,6 +27,7 @@ def lambda_handler(event, context):
     try:
         response = table.scan()
         items = response.get('Items', [])
+        # print(response['Items'])
         sorted_items = sorted(items, key=lambda x: x['highScore'], reverse=True)
         
         return {
@@ -45,7 +36,8 @@ def lambda_handler(event, context):
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps(sorted_items)
+             # Use the custom encoder here
+            'body': json.dumps(sorted_items, cls=DecimalEncoder)
         }
     except Exception as e:
         return {

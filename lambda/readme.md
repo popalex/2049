@@ -16,7 +16,7 @@ python setup_local.py
 3. Test Lambda function:
 
 ```shell
-python-lambda-local -f lambda_handler -t 5 app.py event.json
+LOCAL_TESTING=true DYNAMODB_TABLE=high-scores-table python-lambda-local -f lambda_handler -t 5 app.py event.json
 ```
 
 4. To verify table contents:
