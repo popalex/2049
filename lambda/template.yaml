@@ -5,10 +5,13 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.lambda_handler
-      Runtime: python3.9
+      Runtime: python3.12
+      Timeout: 30  # Increase timeout from default 3 seconds
       Environment:
         Variables:
           DYNAMODB_TABLE: high-scores-table
+          LOCAL_TESTING: true
+          AWS_ENDPOINT_URL: 'http://localstack:4566'
       Events:
         HighScores:
           Type: Api
