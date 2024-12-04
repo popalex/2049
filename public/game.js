@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:5000';
+const API_BASE_URL = 'http://127.0.0.1:3000';
 
 function generateUsername() {
     const uuid = crypto.randomUUID();
@@ -455,7 +455,7 @@ function updateUI() {
 }
 
 function getHighScores() {
-    fetch(`${API_BASE_URL}/high_scores`)
+    fetch(`${API_BASE_URL}/high-scores`)
         .then(response => response.json())
         .then(data => {
             const modal = document.createElement('div');

@@ -4,7 +4,7 @@
 
 1. Start LocalStack:
 ```bash
-docker-compose up -d
+docker compose up
 ```
 
 2. Create table and insert sample data:
@@ -31,6 +31,11 @@ python local_list_query.py
 sam local start-api --docker-network lambda-local
 ```
 
+To test it:
+
+```shell
+curl -X GET http://127.0.0.1:3000/high-scores
+```
 
 
 5. To stop LocalStack:
