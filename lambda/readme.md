@@ -16,7 +16,13 @@ python setup_local.py
 3. Test Lambda function:
 
 ```shell
-LOCAL_TESTING=true DYNAMODB_TABLE=high-scores-table AWS_ENDPOINT_URL=http://localhost:4566  python-lambda-local -f lambda_handler -t 5 app.py event.json
+LOCAL_TESTING=true DYNAMODB_TABLE=GameScores AWS_ENDPOINT_URL=http://localhost:4566  python-lambda-local -f lambda_handler -t 5 app.py event.json
+```
+
+and post something to it:
+
+```shell
+LOCAL_TESTING=true DYNAMODB_TABLE=GameScores AWS_ENDPOINT_URL=http://localhost:4566  python-lambda-local -f lambda_handler -t 5 app.py event_post.json
 ```
 
 4. To verify table contents:

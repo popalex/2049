@@ -1,0 +1,5 @@
+{
+    "httpMethod": "POST",
+    "path": "/insert-score",
+    "body": "{\"playerName\":\"PlayerOne\",\"gameId\":\"game123\",\"highScore\":1500}"
+} 

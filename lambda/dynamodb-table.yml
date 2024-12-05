@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB table for game high scores'
+
+Resources:
+  GameScoresTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: 2049GameScores
+      AttributeDefinitions:
+        - AttributeName: gameId
+          AttributeType: S
+        - AttributeName: highScore
+          AttributeType: N
+      KeySchema:
+        - AttributeName: gameId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: HighScoreIndex
+          KeySchema:
+            - AttributeName: gameId
+              KeyType: HASH
+            - AttributeName: highScore
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      Tags:
+        - Key: Environment
+          Value: Production
+
+Outputs:
+  TableName:
+    Description: Name of the DynamoDB table
+    Value: !Ref GameScoresTable
+  TableArn:
+    Description: ARN of the DynamoDB table
+    Value: !GetAtt GameScoresTable.Arn
