@@ -1,9 +1,16 @@
-const API_BASE_URL = 'http://127.0.0.1:3000';
+// const API_BASE_URL = 'http://127.0.0.1:3000';
+const API_BASE_URL = 'http://alb-2049-1448964450.eu-central-1.elb.amazonaws.com';
 
 function generateUsername() {
     const uuid = crypto.randomUUID();
     const shortId = uuid.slice(0, 8);
     return `player_${shortId}`;
+}
+
+function generateGameId() {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    return `game_${timestamp}_${random}`;
 }
 
 class Game2048 {
@@ -16,6 +23,7 @@ class Game2048 {
         this.setupGame();
         this.addExplosionStyles();
         this.username = generateUsername();
+        this.gameId = generateGameId();
     }
 
     setupGame() {
@@ -369,6 +377,26 @@ class Game2048 {
         document.body.appendChild(gameOver);
         gameOver.style.display = 'block';
 
+        // Make API call to insert score
+    fetch(`${API_BASE_URL}/insert-score`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            playerName: this.username,
+            highScore: this.score,
+            gameId: this.gameId
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Score saved successfully:', data);
+        })
+        .catch(error => {
+            console.error('Error saving score:', error);
+        });
+
         const restartBtn = gameOver.querySelector('.restart-btn');
         restartBtn.addEventListener('click', () => {
             this.restart();
@@ -395,6 +423,8 @@ class Game2048 {
         this.addRandomTile();
         this.addRandomTile();
         this.render();
+        // Reset the game id
+        this.gameId = generateGameId();
         // Don't reset the username on restart !
         // this.username = generateUsername();
     }
@@ -477,7 +507,7 @@ function getHighScores() {
             const table = document.createElement('table');
             table.innerHTML = `
                 <tr>
-                    <th>Rank</th>
+                    <th>Game Id</th>
                     <th>Player</th>
                     <th>Score</th>
                 </tr>
@@ -525,7 +555,13 @@ document.addEventListener('keydown', (event) => {
     updateUI();
 });
 
+function GameOver()
+{
+    game.showGameOver();
+}
+
 document.getElementById('new-game-btn').addEventListener('click', startNewGame);
 document.getElementById('restart-btn').addEventListener('click', startNewGame);
 document.getElementById('new-username-btn')?.addEventListener('click', updateUsername);
 document.getElementById('high-scores-btn')?.addEventListener('click', getHighScores);
+document.getElementById('go-btn')?.addEventListener('click', GameOver);

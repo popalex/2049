@@ -16,10 +16,14 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(obj)
 
 def lambda_handler(event, context):
+    logger.info(f'Event: {event}')
     http_method = event['httpMethod']
     path = event['path']
     if event.get('body'):
-        body = json.loads(event.get('body'))
+        try:
+            body = json.loads(event.get('body'))
+        except json.JSONDecodeError:
+            body = event.get('body')    
     else:
         body = None
 
@@ -27,22 +31,38 @@ def lambda_handler(event, context):
         return high_score_handler()
     if http_method == 'POST' and path == '/insert-score':
         return insert_score_handler(body)
+
+    # return insert_score_handler(body)
     
-    return return_404()
+    return return_200()
 
 def return_404():
     return {
         'statusCode': 404,
         'headers': {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS,POST,PUT',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
         },
         'body': json.dumps({'error': 'Not Found'})
     }
 
+def return_200():
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS,POST,PUT',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+            'Content-Type': 'application/json'
+        },
+        'body': json.dumps({'message': 'ok'})
+    }
+
 def high_score_handler():
     try:
-        logger.info('Starting lambda execution')
+        logger.info('Starting lambda execution in high_score_handler')
 
         if 'LOCAL_TESTING' in os.environ:
             endpoint_url = os.environ.get('AWS_ENDPOINT_URL')
@@ -76,6 +96,11 @@ def high_score_handler():
         
         # Sort items by score in descending order
         sorted_items = sorted(items, key=lambda x: x['highScore'], reverse=True)[:10]
+        idx = 1
+        for item in sorted_items:
+            item['index'] = idx
+            idx += 1
+        
         result_json = json.dumps(sorted_items, cls=DecimalEncoder)
         
         logger.info(f'DynamoDB response (top 10): {result_json}')
@@ -94,14 +119,16 @@ def high_score_handler():
             'statusCode': 500,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS,POST,PUT',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
             },
             'body': json.dumps({'error': str(e)})
         }
 
 def insert_score_handler(body):
 
-    logger.info('Starting lambda execution')
+    logger.info('Starting lambda execution in insert_score_handler')
 
     if 'LOCAL_TESTING' in os.environ:
         endpoint_url = os.environ.get('AWS_ENDPOINT_URL')
@@ -119,7 +146,25 @@ def insert_score_handler(body):
 
     try:
         table.put_item(Item=body)
-        return True
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS,POST,PUT',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+            },
+            'body': json.dumps({'message': 'ok'})
+        }
     except Exception as e:
-        logger.error(f"Error inserting score: {str(e)}")
-        return False
+        logger.error(f'Error occurred: {str(e)}', exc_info=True)
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS,POST,PUT',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+            },
+            'body': json.dumps({'error': str(e)})
+        }
